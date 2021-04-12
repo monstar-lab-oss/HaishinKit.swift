@@ -319,9 +319,10 @@ open class RTMPStream: NetStream {
     private var isBeingClosed = false
     private var rtmpConnection: RTMPConnection
 
-    public init(connection: RTMPConnection) {
+    public init(connection: RTMPConnection, encodeErrorDelegate: EncodeErrorDelegate? = nil) {
         self.rtmpConnection = connection
         super.init()
+        H264Encoder.encodeErrorDelegate = encodeErrorDelegate
         dispatcher = EventDispatcher(target: self)
         addEventListener(.rtmpStatus, selector: #selector(on(status:)), observer: self)
         rtmpConnection.addEventListener(.rtmpStatus, selector: #selector(on(status:)), observer: self)

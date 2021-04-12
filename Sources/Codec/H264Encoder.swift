@@ -6,6 +6,10 @@ import VideoToolbox
 import UIKit
 #endif
 
+public protocol EncodeErrorDelegate {
+    func encodeError()
+}
+
 public protocol VideoEncoderDelegate: class {
     func didSetFormatDescription(video formatDescription: CMFormatDescription?)
     func sampleOutput(video sampleBuffer: CMSampleBuffer)
@@ -152,6 +156,8 @@ public final class H264Encoder {
         }
     }
     weak var delegate: VideoEncoderDelegate?
+        
+    static var encodeErrorDelegate: EncodeErrorDelegate?
 
     private(set) var status: OSStatus = noErr
     private var attributes: [NSString: AnyObject] {
@@ -197,6 +203,7 @@ public final class H264Encoder {
                 if status == kVTParameterErr {
                     // on iphone 11 with size=1792x827 this occurs
                     logger.error("encoding failed with kVTParameterErr. Perhaps the width x height is too big for the encoder setup?")
+                    encodeErrorDelegate?.encodeError()
                 }
             return
         }
