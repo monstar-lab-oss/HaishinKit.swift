@@ -521,7 +521,7 @@ open class RTMPStream: NetStream {
                 mixer.videoIO.screen?.startRunning()
             #endif
             mixer.audioIO.encoder.delegate = muxer
-            mixer.videoIO.encoder.delegate = muxer
+            mixer.videoIO.encoder.delegate = muxer // ここでエンコーダーのデリゲート設定
             // sampler?.delegate = muxer
             mixer.startRunning()
             videoWasSent = false
@@ -617,6 +617,8 @@ extension RTMPStream: RTMPMuxerDelegate {
     }
 
     func sampleOutput(video buffer: Data, withTimestamp: Double, muxer: RTMPMuxer) {
+        print("videoTimestamp: \(videoTimestamp)") // ログ追加
+
         guard readyState == .publishing else {
             return
         }
@@ -647,4 +649,113 @@ extension RTMPStream: AVMixerDelegate {
     func mixer(_ mixer: AVMixer, didOutput audio: AVAudioPCMBuffer, presentationTimeStamp: CMTime) {
         delegate?.rtmpStream(self, didOutput: audio, presentationTimeStamp: presentationTimeStamp)
     }
+}
+
+extension RTMPStream {
+    public func appendSampleBufferFromImage(_ image: UIImage) {
+        if let sampleBuffer = makeCmSampleBuffer(image: image) {
+            appendSampleBuffer(sampleBuffer, withType: .video)
+
+//            let keyframe: Bool = !sampleBuffer.isNotSync
+//            var compositionTime: Int32 = 0
+//            let presentationTimeStamp: CMTime = sampleBuffer.presentationTimeStamp
+//            var decodeTimeStamp: CMTime = sampleBuffer.decodeTimeStamp
+//            if decodeTimeStamp == CMTime.invalid {
+//                decodeTimeStamp = presentationTimeStamp
+//            } else {
+//                compositionTime = Int32((presentationTimeStamp.seconds - decodeTimeStamp.seconds) * 1000)
+//            }
+////            let delta: Double = (videoTimeStamp == CMTime.zero ? 0 : decodeTimeStamp.seconds - videoTimeStamp.seconds) * 1000
+//            let delta: Double = (muxer.videoTimeStamp == CMTime.zero ? 0 : decodeTimeStamp.seconds - muxer.videoTimeStamp.seconds) * 1000
+//
+//            let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+//            CVPixelBufferLockBaseAddress(imageBuffer!, CVPixelBufferLockFlags(rawValue: 0))
+//            let bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer!)
+//            let height = CVPixelBufferGetHeight(imageBuffer!)
+//            let src_buff = CVPixelBufferGetBaseAddress(imageBuffer!)
+//            let nsData = NSData(bytes: src_buff, length: bytesPerRow * height)
+//            let data = Data.init(referencing: nsData)
+////            let data = Data(bytes: src_buff!, count: bytesPerRow * height)
+//
+//
+////            guard let data = sampleBuffer.dataBuffer?.data, 0 <= delta else {
+////                return
+////            }
+//            var buffer = Data([((keyframe ? FLVFrameType.key.rawValue : FLVFrameType.inter.rawValue) << 4) | FLVVideoCodec.avc.rawValue, FLVAVCPacketType.nal.rawValue])
+//            buffer.append(contentsOf: compositionTime.bigEndian.data[1..<4])
+//            buffer.append(data)
+////            delegate?.sampleOutput(video: buffer, withTimestamp: delta, muxer: self)
+//            sampleOutput(video: data, withTimestamp: delta, muxer: muxer)
+////            videoTimeStamp = decodeTimeStamp
+//            muxer.videoTimeStamp = decodeTimeStamp
+        }
+    }
+
+//    public func appendPixelBuffer(_ pixelBuffer: CVPixelBuffer) {
+//        appendSampleBuffer(makeSampleBuffer(pixelBuffer: pixelBuffer), withType: .video)
+//    }
+
+
+    private func makeCmSampleBuffer(image: UIImage) -> CMSampleBuffer? {
+        // Convert Image to CVPixelBuffer
+        guard let cgImage = image.cgImage else {
+            return nil
+        }
+        let ciImage = CIImage(cgImage: cgImage)
+        var pixelBuffer: CVPixelBuffer?
+        let attrs = [kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue,
+                     kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue] as CFDictionary
+        CVPixelBufferCreate(kCFAllocatorDefault,
+                            Int(mixer.videoIO.encoder.width),
+                            Int(mixer.videoIO.encoder.height),
+                            kCVPixelFormatType_32BGRA,
+                            attrs,
+                            &pixelBuffer)
+        let context = CIContext()
+        context.render(ciImage, to: pixelBuffer!)
+
+        // Make CMSampleBuffer from CVPixelBuffer
+        var newSampleBuffer: CMSampleBuffer? = nil
+        var timimgInfo: CMSampleTimingInfo = CMSampleTimingInfo(
+            duration: CMTime.zero,
+            presentationTimeStamp: CMTimeAdd(mixer.videoIO.encoder.lastPresentationTimeStamp ?? CMTime.zero,
+                                             CMTimeMake(value: 1, timescale: Int32(mixer.fps))),
+            decodeTimeStamp: CMTime.invalid
+        )
+
+        var videoInfo: CMVideoFormatDescription? = nil
+        CMVideoFormatDescriptionCreateForImageBuffer(allocator: nil, imageBuffer: pixelBuffer!, formatDescriptionOut: &videoInfo)
+        CMSampleBufferCreateForImageBuffer(allocator: kCFAllocatorDefault,
+                                           imageBuffer: pixelBuffer!,
+                                           dataReady: true,
+                                           makeDataReadyCallback: nil,
+                                           refcon: nil,
+                                           formatDescription: videoInfo!,
+                                           sampleTiming: &timimgInfo,
+                                           sampleBufferOut: &newSampleBuffer)
+        return newSampleBuffer!
+    }
+
+//    private func makeSampleBuffer(pixelBuffer: CVPixelBuffer) -> CMSampleBuffer {
+//        var newSampleBuffer: CMSampleBuffer? = nil
+//
+//        var timimgInfo: CMSampleTimingInfo = CMSampleTimingInfo(
+//            duration: CMTime.zero,
+//            presentationTimeStamp: CMTimeAdd(mixer.videoIO.encoder.lastPresentationTimeStamp ?? CMTime.zero,
+//                                             CMTimeMake(value: 1, timescale: Int32(mixer.fps))),
+//            decodeTimeStamp: CMTime.invalid
+//        )
+//
+//        var videoInfo: CMVideoFormatDescription? = nil
+//        CMVideoFormatDescriptionCreateForImageBuffer(allocator: nil, imageBuffer: pixelBuffer, formatDescriptionOut: &videoInfo)
+//        CMSampleBufferCreateForImageBuffer(allocator: kCFAllocatorDefault,
+//                                           imageBuffer: pixelBuffer,
+//                                           dataReady: true,
+//                                           makeDataReadyCallback: nil,
+//                                           refcon: nil,
+//                                           formatDescription: videoInfo!,
+//                                           sampleTiming: &timimgInfo,
+//                                           sampleBufferOut: &newSampleBuffer)
+//        return newSampleBuffer!
+//    }
 }

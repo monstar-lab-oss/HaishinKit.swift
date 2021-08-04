@@ -283,12 +283,12 @@ final class VideoIOComponent: IOComponent {
     #endif
 
     #if os(iOS)
-    var screen: CaptureSessionConvertible? = nil {
+    var screen: CustomCaptureSession? = nil {
         didSet {
-            if let oldValue = oldValue {
+            if let oldValue: CustomCaptureSession = oldValue {
                 oldValue.delegate = nil
             }
-            if let screen = screen {
+            if let screen: CustomCaptureSession = screen {
                 screen.delegate = self
             }
         }
@@ -406,6 +406,13 @@ final class VideoIOComponent: IOComponent {
 
 extension VideoIOComponent {
     func encodeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
+//        // ログ追加
+//        print("===")
+//        print("duration: \(CMTimeGetSeconds(sampleBuffer.duration))")
+//        print("presentationTimeStamp: \(CMTimeGetSeconds(sampleBuffer.presentationTimeStamp))")
+//        print("decodeTimeStamp: \(CMTimeGetSeconds(sampleBuffer.decodeTimeStamp))")
+//        print("===")
+
         guard let buffer: CVImageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return
         }

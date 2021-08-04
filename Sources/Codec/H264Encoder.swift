@@ -169,6 +169,7 @@ public final class H264Encoder {
     }
     private var invalidateSession = true
     private var lastImageBuffer: CVImageBuffer?
+    var lastPresentationTimeStamp: CMTime?
 
     // @see: https://developer.apple.com/library/mac/releasenotes/General/APIDiffsMacOSX10_8/VideoToolbox.html
     private var properties: [NSString: NSObject] {
@@ -201,7 +202,9 @@ public final class H264Encoder {
         return properties
     }
 
+    // バックグラウンド行っているとこれが呼ばれない
     private var callback: VTCompressionOutputCallback = {(outputCallbackRefCon: UnsafeMutableRawPointer?, _: UnsafeMutableRawPointer?, status: OSStatus, _: VTEncodeInfoFlags, sampleBuffer: CMSampleBuffer?) in
+        logger.trace(sampleBuffer) // ログ追加
         guard
             let refcon: UnsafeMutableRawPointer = outputCallbackRefCon,
             let sampleBuffer: CMSampleBuffer = sampleBuffer, status == noErr else {
@@ -213,7 +216,7 @@ public final class H264Encoder {
         }
         let encoder: H264Encoder = Unmanaged<H264Encoder>.fromOpaque(refcon).takeUnretainedValue()
         encoder.formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)
-        encoder.delegate?.sampleOutput(video: sampleBuffer)
+        encoder.delegate?.sampleOutput(video: sampleBuffer) // 配信状態じゃないとデリゲートがない
     }
 
     private var _session: VTCompressionSession?
@@ -255,6 +258,7 @@ public final class H264Encoder {
         settings.observer = self
     }
 
+    // attachCamera(nil)すると呼ばれなくなる
     func encodeImageBuffer(_ imageBuffer: CVImageBuffer, presentationTimeStamp: CMTime, duration: CMTime) {
         guard isRunning.value && locked == 0 else {
             return
@@ -266,7 +270,7 @@ public final class H264Encoder {
             return
         }
         var flags: VTEncodeInfoFlags = []
-        VTCompressionSessionEncodeFrame(
+        let status = VTCompressionSessionEncodeFrame( // ここから VTCompressionOutputCallback が呼ばれる
             session,
             imageBuffer: muted ? lastImageBuffer ?? imageBuffer : imageBuffer,
             presentationTimeStamp: presentationTimeStamp,
@@ -275,9 +279,11 @@ public final class H264Encoder {
             sourceFrameRefcon: nil,
             infoFlagsOut: &flags
         )
+        print("OSStatus: \(status)") // バックグラウンドだと　OSStatus: -12903
         if !muted || lastImageBuffer == nil {
             lastImageBuffer = imageBuffer
         }
+        lastPresentationTimeStamp = presentationTimeStamp
     }
 
     private func setProperty(_ key: CFString, _ value: CFTypeRef?) {
@@ -314,6 +320,11 @@ public final class H264Encoder {
             break
         }
     }
+
+@objc
+private func applicationWillResignActive(_ notification: Notification) {
+    invalidateSession = true
+}
 #endif
 }
 
@@ -336,6 +347,12 @@ extension H264Encoder: Running {
                 name: UIApplication.willEnterForegroundNotification,
                 object: nil
             )
+NotificationCenter.default.addObserver(
+    self,
+    selector: #selector(self.applicationWillResignActive),
+    name: UIApplication.willResignActiveNotification,
+    object: nil
+)
 #endif
         }
     }

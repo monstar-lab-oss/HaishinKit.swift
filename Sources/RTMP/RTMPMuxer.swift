@@ -13,7 +13,7 @@ final class RTMPMuxer {
     weak var delegate: RTMPMuxerDelegate?
     private var configs: [Int: Data] = [:]
     private var audioTimeStamp = CMTime.zero
-    private var videoTimeStamp = CMTime.zero
+    public var videoTimeStamp = CMTime.zero
 
     func dispose() {
         configs.removeAll()
