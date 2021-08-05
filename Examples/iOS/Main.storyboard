@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="49e-Tb-3d3">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -19,8 +19,26 @@
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Gme-VA-sgd" customClass="MTHKView" customModule="HaishinKit">
                                 <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                                <subviews>
+                                    <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="b95-Gv-8Dp">
+                                        <rect key="frame" x="206" y="160" width="200" height="32"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="200" id="zyE-H4-3aS"/>
+                                        </constraints>
+                                        <segments>
+                                            <segment title="Camera"/>
+                                            <segment title="Still Image"/>
+                                        </segments>
+                                        <connections>
+                                            <action selector="onStillImageModeChanged:" destination="9pv-A4-QxB" eventType="valueChanged" id="4qg-dc-XFK"/>
+                                        </connections>
+                                    </segmentedControl>
+                                </subviews>
                                 <viewLayoutGuide key="safeArea" id="h8f-2Q-C5a"/>
                                 <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                <constraints>
+                                    <constraint firstItem="h8f-2Q-C5a" firstAttribute="trailing" secondItem="b95-Gv-8Dp" secondAttribute="trailing" constant="8" id="Da8-UG-N6H"/>
+                                </constraints>
                             </view>
                             <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="32" minValue="15" maxValue="120" translatesAutoresizingMaskIntoConstraints="NO" id="aKS-oc-LrT">
                                 <rect key="frame" x="14" y="775" width="340" height="31"/>
@@ -148,6 +166,7 @@
                             <constraint firstItem="xxe-Wi-b9E" firstAttribute="bottom" secondItem="aKS-oc-LrT" secondAttribute="bottom" constant="8" id="VXV-L1-EAE"/>
                             <constraint firstItem="xxe-Wi-b9E" firstAttribute="trailing" secondItem="Gme-VA-sgd" secondAttribute="trailing" id="WGA-8W-z7H"/>
                             <constraint firstItem="kaV-Nf-KmS" firstAttribute="leading" secondItem="dLf-ee-K3I" secondAttribute="trailing" constant="16" id="XZC-rZ-A2O"/>
+                            <constraint firstItem="b95-Gv-8Dp" firstAttribute="top" secondItem="fbC-rC-wNg" secondAttribute="bottom" constant="8" id="ac3-yt-VrI"/>
                             <constraint firstItem="4s5-OW-qAO" firstAttribute="leading" secondItem="xxe-Wi-b9E" secondAttribute="leading" constant="16" id="bBy-aT-OSg"/>
                             <constraint firstItem="fbC-rC-wNg" firstAttribute="top" secondItem="2Sy-na-foy" secondAttribute="bottom" constant="8" id="bxt-Jk-DKC"/>
                             <constraint firstItem="Gme-VA-sgd" firstAttribute="leading" secondItem="xxe-Wi-b9E" secondAttribute="leading" id="c1b-Eg-nyX"/>
@@ -177,6 +196,7 @@
                         <outlet property="lfView" destination="Gme-VA-sgd" id="lgg-bN-G69"/>
                         <outlet property="pauseButton" destination="ioi-3B-kK8" id="Afy-2V-jam"/>
                         <outlet property="publishButton" destination="kaV-Nf-KmS" id="6yv-vb-8Vp"/>
+                        <outlet property="stillImageSwitch" destination="b95-Gv-8Dp" id="qNG-1b-mHF"/>
                         <outlet property="videoBitrateLabel" destination="dLf-ee-K3I" id="hto-Gs-HwU"/>
                         <outlet property="videoBitrateSlider" destination="4s5-OW-qAO" id="IKu-cc-gGp"/>
                         <outlet property="zoomSlider" destination="Qnn-SP-eWm" id="FjO-E6-f1K"/>
