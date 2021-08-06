@@ -220,7 +220,8 @@ final class LiveViewController: UIViewController {
         case 0:
             rtmpStream.setStillImageBuffer(nil)
         case 1:
-            if let image = UIImage(named: "sampleImage"), let imageBuffer = makePixelBuffer(image: image) {
+            if let image = UIImage(named: "sampleImage"),
+               let imageBuffer = makePixelBuffer(image: image) {
                 rtmpStream.setStillImageBuffer(imageBuffer)
             }
         default:
