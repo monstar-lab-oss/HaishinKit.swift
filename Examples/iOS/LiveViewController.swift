@@ -37,6 +37,7 @@ final class LiveViewController: UIViewController {
     @IBOutlet private weak var audioBitrateSlider: UISlider!
     @IBOutlet private weak var fpsControl: UISegmentedControl!
     @IBOutlet private weak var effectSegmentControl: UISegmentedControl!
+    @IBOutlet weak var stillImageSwitch: UISegmentedControl!
 
     private var rtmpConnection = RTMPConnection()
     private var rtmpStream: RTMPStream!
@@ -214,6 +215,20 @@ final class LiveViewController: UIViewController {
         }
     }
 
+    @IBAction func onStillImageModeChanged(_ segment: UISegmentedControl) {
+        switch segment.selectedSegmentIndex {
+        case 0:
+            rtmpStream.setStillImageBuffer(nil)
+        case 1:
+            if let image = UIImage(named: "sampleImage"),
+               let imageBuffer = makePixelBuffer(image: image) {
+                rtmpStream.setStillImageBuffer(imageBuffer)
+            }
+        default:
+            break
+        }
+    }
+
     @objc
     private func on(_ notification: Notification) {
         guard let orientation = DeviceUtil.videoOrientation(by: UIApplication.shared.statusBarOrientation) else {
@@ -236,5 +251,29 @@ final class LiveViewController: UIViewController {
         if Thread.isMainThread {
             currentFPSLabel?.text = "\(rtmpStream.currentFPS)"
         }
+    }
+}
+
+extension LiveViewController {
+
+    // Convert Image to CVPixelBuffer
+    private func makePixelBuffer(image: UIImage) -> CVPixelBuffer? {
+        guard let cgImage = image.cgImage else {
+            return nil
+        }
+        let ciImage = CIImage(cgImage: cgImage)
+        var pixelBuffer: CVPixelBuffer?
+        let attrs = [kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue,
+                     kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue] as CFDictionary
+        CVPixelBufferCreate(kCFAllocatorDefault,
+                            720, // Set dinamic value if needed
+                            1280,
+                            kCVPixelFormatType_32BGRA,
+                            attrs,
+                            &pixelBuffer)
+        let context = CIContext()
+        context.render(ciImage, to: pixelBuffer!)
+
+        return pixelBuffer
     }
 }

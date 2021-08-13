@@ -648,3 +648,9 @@ extension RTMPStream: AVMixerDelegate {
         delegate?.rtmpStream(self, didOutput: audio, presentationTimeStamp: presentationTimeStamp)
     }
 }
+
+extension RTMPStream {
+    public func setStillImageBuffer(_ imageBuffer: CVImageBuffer?) {
+        mixer.videoIO.stillImageBuffer = imageBuffer
+    }
+}

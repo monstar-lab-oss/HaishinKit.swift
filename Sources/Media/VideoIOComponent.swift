@@ -82,6 +82,8 @@ final class VideoIOComponent: IOComponent {
         }
     }
 
+    var stillImageBuffer: CVImageBuffer?
+
     #if os(iOS) || os(macOS)
     var fps: Float64 = AVMixer.defaultFPS {
         didSet {
@@ -406,7 +408,8 @@ final class VideoIOComponent: IOComponent {
 
 extension VideoIOComponent {
     func encodeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
-        guard let buffer: CVImageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+        // If there is still image data, use it
+        guard let buffer = stillImageBuffer ?? CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return
         }
 
